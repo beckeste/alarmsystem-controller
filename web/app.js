@@ -3,11 +3,13 @@ new Vue({
     data: {
         systemStatus: '',
         sensors: [],
-        newSensorMac: ''
+        newSensorMac: '',
+        apiUrl: `http://${hostIpAddress}:${apiPort}`
     },
     methods: {
         armSystem() {
-            axios.post('http://localhost:8081/alarmsystem/arm')
+            console.log('Arm system called');
+            axios.post(`${this.apiUrl}/alarmsystem/arm`)
                 .then(response => {
                     this.systemStatus = response.data.status;
                 })
@@ -16,7 +18,8 @@ new Vue({
                 });
         },
         disarmSystem() {
-            axios.post('http://localhost:8081/alarmsystem/disarm')
+            console.log('Disarm system called');
+            axios.post(`${this.apiUrl}/alarmsystem/disarm`)
                 .then(response => {
                     this.systemStatus = response.data.status;
                 })
@@ -25,7 +28,8 @@ new Vue({
                 });
         },
         triggerAlarm() {
-            axios.post('http://localhost:8081/alarmsystem/alarm')
+            console.log('Trigger alarm called');
+            axios.post(`${this.apiUrl}/alarmsystem/alarm`)
                 .then(response => {
                     this.systemStatus = response.data.status;
                 })
@@ -34,7 +38,8 @@ new Vue({
                 });
         },
         fetchSensors() {
-            axios.get('http://localhost:8081/sensors')
+            console.log('Fetch sensors called');
+            axios.get(`${this.apiUrl}/sensors`)
                 .then(response => {
                     this.sensors = Object.keys(response.data).map(key => ({
                         mac_address: key,
@@ -47,7 +52,8 @@ new Vue({
                 });
         },
         addSensor() {
-            axios.post('http://localhost:8081/sensors', { mac_address: this.newSensorMac })
+            console.log('Add sensor called');
+            axios.post(`${this.apiUrl}/sensors`, { mac_address: this.newSensorMac })
                 .then(() => {
                     this.fetchSensors();
                     this.newSensorMac = '';
@@ -57,7 +63,8 @@ new Vue({
                 });
         },
         deleteSensor(macAddress) {
-            axios.delete(`http://localhost:8081/sensors/${macAddress}`)
+            console.log('Delete sensor called');
+            axios.delete(`${this.apiUrl}/sensors/${macAddress}`)
                 .then(() => {
                     this.fetchSensors();
                 })
@@ -66,7 +73,8 @@ new Vue({
                 });
         },
         fetchSystemStatus() {
-            axios.get('http://localhost:8081/alarmsystem')
+            console.log('Fetch system status called');
+            axios.get(`${this.apiUrl}/alarmsystem`)
                 .then(response => {
                     this.systemStatus = response.data.status;
                 })
@@ -76,6 +84,7 @@ new Vue({
         }
     },
     mounted() {
+        console.log('Vue app mounted');
         this.fetchSystemStatus();
         this.fetchSensors();
         setInterval(() => {
