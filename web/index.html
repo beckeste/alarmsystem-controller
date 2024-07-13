@@ -12,6 +12,17 @@
         <button @click="disarmSystem">Disarm System</button>
         <button @click="triggerAlarm">Trigger Alarm</button>
         <p>System Status: {{ systemStatus }}</p>
+
+        <h2>Sensors</h2>
+        <ul>
+            <li v-for="sensor in sensors" :key="sensor.mac_address">
+                MAC: {{ sensor.mac_address }} - Last Updated: {{ sensor.last_updated }} - IP: {{ sensor.ip_address }}
+                <button @click="deleteSensor(sensor.mac_address)">Delete</button>
+            </li>
+        </ul>
+
+        <input v-model="newSensorMac" placeholder="New Sensor MAC Address" />
+        <button @click="addSensor">Add Sensor</button>
     </div>
 
     <script src="app.js"></script>

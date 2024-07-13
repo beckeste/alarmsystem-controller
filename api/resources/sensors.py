@@ -1,4 +1,6 @@
+from flask import request
 from flask_restful import Resource, reqparse
+from datetime import datetime
 
 sensors = {}
 
@@ -18,83 +20,77 @@ class SensorListResource(Resource):
         Add a new sensor
         ---
         parameters:
-          - name: sensor_id
+          - name: mac_address
             in: body
             type: string
             required: true
-            description: The sensor ID
+            description: The sensor MAC address
         responses:
           201:
             description: Sensor created
         """
         parser = reqparse.RequestParser()
-        parser.add_argument('sensor_id', required=True)
+        parser.add_argument('mac_address', required=True)
         args = parser.parse_args()
-        sensor_id = args['sensor_id']
-        sensors[sensor_id] = {'status': 'inactive'}
-        return sensors[sensor_id], 201
+        mac_address = args['mac_address']
+        ip_address = request.remote_addr
+        sensors[mac_address] = {'last_updated': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), 'ip_address': ip_address}
+        return sensors[mac_address], 201
 
 class SensorResource(Resource):
-    def get(self, sensor_id):
+    def get(self, mac_address):
         """
         Get a specific sensor
         ---
         parameters:
-          - name: sensor_id
+          - name: mac_address
             in: path
             type: string
             required: true
-            description: The sensor ID
+            description: The sensor MAC address
         responses:
           200:
             description: A specific sensor
         """
-        if sensor_id in sensors:
-            return sensors[sensor_id], 200
+        if mac_address in sensors:
+            return sensors[mac_address], 200
         return {'message': 'Sensor not found'}, 404
 
-    def put(self, sensor_id):
+    def put(self, mac_address):
         """
         Update a specific sensor
         ---
         parameters:
-          - name: sensor_id
+          - name: mac_address
             in: path
             type: string
             required: true
-            description: The sensor ID
-          - name: status
-            in: body
-            type: string
-            required: true
-            description: The sensor status
+            description: The sensor MAC address
         responses:
           200:
             description: Sensor updated
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('status', required=True)
-        args = parser.parse_args()
-        if sensor_id in sensors:
-            sensors[sensor_id]['status'] = args['status']
-            return sensors[sensor_id], 200
+        if mac_address in sensors:
+            sensors[mac_address]['last_updated'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            sensors[mac_address]['ip_address'] = request.remote_addr  # Update the IP address if needed
+            return sensors[mac_address], 200
         return {'message': 'Sensor not found'}, 404
 
-    def delete(self, sensor_id):
+    def delete(self, mac_address):
         """
         Delete a specific sensor
         ---
         parameters:
-          - name: sensor_id
+          - name: mac_address
             in: path
             type: string
             required: true
-            description: The sensor ID
+            description: The sensor MAC address
         responses:
           200:
             description: Sensor deleted
         """
-        if sensor_id in sensors:
-            del sensors[sensor_id]
+        if mac_address in sensors:
+            del sensors[mac_address]
             return '', 204
         return {'message': 'Sensor not found'}, 404
