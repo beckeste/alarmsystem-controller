@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alarm System</title>
+</head>
+<body>
+    <h1>Alarm System</h1>
+    <button id="arm">Arm System</button>
+    <button id="disarm">Disarm System</button>
+    <button id="trigger">Trigger Alarm</button>
+    <p id="systemStatus"></p>
+
+    <script>
+        document.getElementById('arm').addEventListener('click', function() {
+            fetch('http://localhost:8081/alarmsystem/arm', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('systemStatus').innerText = `System Status: ${data.status}`;
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('disarm').addEventListener('click', function() {
+            fetch('http://localhost:8081/alarmsystem/disarm', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('systemStatus').innerText = `System Status: ${data.status}`;
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('trigger').addEventListener('click', function() {
+            fetch('http://localhost:8081/alarmsystem/alarm', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('systemStatus').innerText = `System Status: ${data.status}`;
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
