@@ -2,9 +2,13 @@ new Vue({
     el: '#app',
     data: {
         systemStatus: '',
+        alarmLevel: '',
         sensors: [],
         newSensorMac: '',
-        apiUrl: `http://${hostIpAddress}:${apiPort}`
+        newSensorName: '',
+        newSensorIp: '',
+        apiUrl: `http://${hostIpAddress}:${apiPort}`,
+        isEditing: false // Neue Variable hinzugefügt
     },
     methods: {
         armSystem() {
@@ -12,6 +16,7 @@ new Vue({
             axios.post(`${this.apiUrl}/alarmsystem/arm`)
                 .then(response => {
                     this.systemStatus = response.data.status;
+                    this.alarmLevel = response.data.alarm_level;
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -22,29 +27,41 @@ new Vue({
             axios.post(`${this.apiUrl}/alarmsystem/disarm`)
                 .then(response => {
                     this.systemStatus = response.data.status;
+                    this.alarmLevel = response.data.alarm_level;
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
         },
-        triggerAlarm() {
+        triggerAlarm(level) {
+            if (this.systemStatus === 'disarmed') {
+                alert('The alarm system is disarmed.');
+                return;
+            }
+
             console.log('Trigger alarm called');
-            axios.post(`${this.apiUrl}/alarmsystem/alarm`)
+            axios.post(`${this.apiUrl}/alarmsystem/alarm/${level}`)
                 .then(response => {
                     this.systemStatus = response.data.status;
+                    this.alarmLevel = response.data.alarm_level;
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
         },
         fetchSensors() {
+            if (this.isEditing) return; // Liste nicht aktualisieren, wenn bearbeitet wird
+
             console.log('Fetch sensors called');
             axios.get(`${this.apiUrl}/sensors`)
                 .then(response => {
-                    this.sensors = Object.keys(response.data).map(key => ({
-                        mac_address: key,
-                        last_updated: response.data[key].last_updated,
-                        ip_address: response.data[key].ip_address
+                    this.sensors = response.data.map(sensor => ({
+                        mac_address: sensor.mac_address,
+                        last_updated: sensor.last_updated,
+                        ip_address: sensor.ip_address,
+                        name: sensor.name,
+                        capabilities: sensor.capabilities,
+                        editing: false
                     }));
                 })
                 .catch(error => {
@@ -53,10 +70,23 @@ new Vue({
         },
         addSensor() {
             console.log('Add sensor called');
-            axios.post(`${this.apiUrl}/sensors`, { mac_address: this.newSensorMac })
+            axios.post(`${this.apiUrl}/sensors`, {
+                mac_address: this.newSensorMac,
+                name: this.newSensorName,
+                ip_address: this.newSensorIp,
+                capabilities: {
+                    buzzer: false,
+                    door_sensor: false,
+                    shutter_sensor: false,
+                    motion_sensor: false,
+                    siren: false
+                }
+            })
                 .then(() => {
                     this.fetchSensors();
                     this.newSensorMac = '';
+                    this.newSensorName = '';
+                    this.newSensorIp = '';
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -72,11 +102,33 @@ new Vue({
                     console.error('Error:', error);
                 });
         },
+        editSensor(sensor) {
+            this.isEditing = true; // Bearbeitungsmodus aktivieren
+            sensor.editing = true;
+        },
+        updateSensor(sensor) {
+            console.log('Update sensor called');
+            axios.put(`${this.apiUrl}/sensors/${sensor.mac_address}`, { name: sensor.name, ip_address: sensor.ip_address, capabilities: sensor.capabilities })
+                .then(() => {
+                    sensor.editing = false;
+                    this.isEditing = false; // Bearbeitungsmodus deaktivieren
+                    this.fetchSensors();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        },
+        cancelEdit(sensor) {
+            sensor.editing = false;
+            this.isEditing = false; // Bearbeitungsmodus deaktivieren
+            this.fetchSensors(); // Laden Sie die Sensoren erneut, um die ursprünglichen Werte wiederherzustellen
+        },
         fetchSystemStatus() {
             console.log('Fetch system status called');
             axios.get(`${this.apiUrl}/alarmsystem`)
                 .then(response => {
                     this.systemStatus = response.data.status;
+                    this.alarmLevel = response.data.alarm_level;
                 })
                 .catch(error => {
                     console.error('Error:', error);

@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Alarm System</title>
+    <!-- Bulma CSS von CDN einbinden -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
@@ -11,24 +13,84 @@
     </script>
 </head>
 <body>
-    <div id="app">
-        <h1>Alarm System</h1>
-        <button @click="armSystem">Arm System</button>
-        <button @click="disarmSystem">Disarm System</button>
-        <button @click="triggerAlarm">Trigger Alarm</button>
-        <p>System Status: {{ systemStatus }}</p>
+    <section class="section">
+        <div class="container" id="app">
+            <h1 class="title">Alarm System</h1>
+            <div class="buttons">
+                <button class="button is-primary" @click="armSystem">Arm System</button>
+                <button class="button is-warning" @click="disarmSystem">Disarm System</button>
+                <button class="button is-danger" @click="triggerAlarm('low')">Trigger Low Alarm</button>
+                <button class="button is-danger" @click="triggerAlarm('medium')">Trigger Medium Alarm</button>
+                <button class="button is-danger" @click="triggerAlarm('high')">Trigger High Alarm</button>
+            </div>
+            <p class="subtitle">System Status: {{ systemStatus }}</p>
+            <p class="subtitle">Alarm Level: {{ alarmLevel }}</p>
 
-        <h2>Sensors</h2>
-        <ul>
-            <li v-for="sensor in sensors" :key="sensor.mac_address">
-                MAC: {{ sensor.mac_address }} - Last Updated: {{ sensor.last_updated }} - IP: {{ sensor.ip_address }}
-                <button @click="deleteSensor(sensor.mac_address)">Delete</button>
-            </li>
-        </ul>
+            <h2 class="title is-4">Sensors</h2>
+            <ul>
+                <li v-for="sensor in sensors" :key="sensor.mac_address">
+                    <span class="tag is-info">MAC: {{ sensor.mac_address }}</span> - 
+                    <span class="tag is-light">Last Updated: {{ sensor.last_updated }}</span> - 
+                    <span class="tag is-dark">IP: {{ sensor.ip_address }}</span>
+                    <span class="tag is-primary">Name: {{ sensor.name }}</span>
+                    <button class="button is-small is-danger is-outlined" @click="deleteSensor(sensor.mac_address)">Delete</button>
+                    <button class="button is-small is-info is-outlined" @click="editSensor(sensor)" v-if="!sensor.editing">Edit</button>
+                    <div v-if="!sensor.editing">
+                        <p>Buzzer: {{ sensor.capabilities.buzzer ? 'Yes' : 'No' }}</p>
+                        <p>Door Sensor: {{ sensor.capabilities.door_sensor ? 'Yes' : 'No' }}</p>
+                        <p>Shutter Sensor: {{ sensor.capabilities.shutter_sensor ? 'Yes' : 'No' }}</p>
+                        <p>Motion Sensor: {{ sensor.capabilities.motion_sensor ? 'Yes' : 'No' }}</p>
+                        <p>Siren: {{ sensor.capabilities.siren ? 'Yes' : 'No' }}</p>
+                    </div>
+                    <div v-else>
+                        <label class="label">Name</label>
+                        <input class="input" v-model="sensor.name">
+                        <label class="label">IP Address</label>
+                        <input class="input" v-model="sensor.ip_address">
+                        <label>
+                            <input type="checkbox" v-model="sensor.capabilities.buzzer"> Buzzer
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.capabilities.door_sensor"> Door Sensor
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.capabilities.shutter_sensor"> Shutter Sensor
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.capabilities.motion_sensor"> Motion Sensor
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.capabilities.siren"> Siren
+                        </label>
+                        <button class="button is-small is-success" @click="updateSensor(sensor)">Save</button>
+                        <button class="button is-small" @click="cancelEdit(sensor)">Cancel</button>
+                    </div>
+                </li>
+            </ul>
 
-        <input v-model="newSensorMac" placeholder="New Sensor MAC Address" />
-        <button @click="addSensor">Add Sensor</button>
-    </div>
+            <div class="field">
+                <label class="label">New Sensor MAC Address</label>
+                <div class="control">
+                    <input class="input" v-model="newSensorMac" placeholder="New Sensor MAC Address">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">New Sensor Name</label>
+                <div class="control">
+                    <input class="input" v-model="newSensorName" placeholder="New Sensor Name">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">New Sensor IP Address</label>
+                <div class="control">
+                    <input class="input" v-model="newSensorIp" placeholder="New Sensor IP Address">
+                </div>
+            </div>
+            <div class="control">
+                <button class="button is-success" @click="addSensor">Add Sensor</button>
+            </div>
+        </div>
+    </section>
 
     <script src="app.js"></script>
 </body>
