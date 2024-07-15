@@ -41,6 +41,12 @@
                         <p>Shutter Sensor: {{ sensor.capabilities.shutter_sensor ? 'Yes' : 'No' }}</p>
                         <p>Motion Sensor: {{ sensor.capabilities.motion_sensor ? 'Yes' : 'No' }}</p>
                         <p>Siren: {{ sensor.capabilities.siren ? 'Yes' : 'No' }}</p>
+                        <p>Armed: {{ sensor.states.armed ? 'Yes' : 'No' }}</p>
+                        <p>Door Open: {{ sensor.states.door_open ? 'Yes' : 'No' }}</p>
+                        <p>Shutter Open: {{ sensor.states.shutter_open ? 'Yes' : 'No' }}</p>
+                        <p>Motion Detected: {{ sensor.states.motion_detected ? 'Yes' : 'No' }}</p>
+                        <p>Siren On: {{ sensor.states.siren_on ? 'Yes' : 'No' }}</p>
+                        <p>Buzzer On: {{ sensor.states.buzzer_on ? 'Yes' : 'No' }}</p>
                     </div>
                     <div v-else>
                         <label class="label">Name</label>
@@ -62,33 +68,29 @@
                         <label>
                             <input type="checkbox" v-model="sensor.capabilities.siren"> Siren
                         </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.armed"> Armed
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.door_open"> Door Open
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.shutter_open"> Shutter Open
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.motion_detected"> Motion Detected
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.siren_on"> Siren On
+                        </label>
+                        <label>
+                            <input type="checkbox" v-model="sensor.states.buzzer_on"> Buzzer On
+                        </label>
                         <button class="button is-small is-success" @click="updateSensor(sensor)">Save</button>
                         <button class="button is-small" @click="cancelEdit(sensor)">Cancel</button>
                     </div>
                 </li>
             </ul>
-
-            <div class="field">
-                <label class="label">New Sensor MAC Address</label>
-                <div class="control">
-                    <input class="input" v-model="newSensorMac" placeholder="New Sensor MAC Address">
-                </div>
-            </div>
-            <div class="field">
-                <label class="label">New Sensor Name</label>
-                <div class="control">
-                    <input class="input" v-model="newSensorName" placeholder="New Sensor Name">
-                </div>
-            </div>
-            <div class="field">
-                <label class="label">New Sensor IP Address</label>
-                <div class="control">
-                    <input class="input" v-model="newSensorIp" placeholder="New Sensor IP Address">
-                </div>
-            </div>
-            <div class="control">
-                <button class="button is-success" @click="addSensor">Add Sensor</button>
-            </div>
         </div>
     </section>
 

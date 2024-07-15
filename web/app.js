@@ -4,9 +4,6 @@ new Vue({
         systemStatus: '',
         alarmLevel: '',
         sensors: [],
-        newSensorMac: '',
-        newSensorName: '',
-        newSensorIp: '',
         apiUrl: `http://${hostIpAddress}:${apiPort}`,
         isEditing: false // Neue Variable hinzugefügt
     },
@@ -61,32 +58,9 @@ new Vue({
                         ip_address: sensor.ip_address,
                         name: sensor.name,
                         capabilities: sensor.capabilities,
+                        states: sensor.states || {}, // Ensure states is an object
                         editing: false
                     }));
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        },
-        addSensor() {
-            console.log('Add sensor called');
-            axios.post(`${this.apiUrl}/sensors`, {
-                mac_address: this.newSensorMac,
-                name: this.newSensorName,
-                ip_address: this.newSensorIp,
-                capabilities: {
-                    buzzer: false,
-                    door_sensor: false,
-                    shutter_sensor: false,
-                    motion_sensor: false,
-                    siren: false
-                }
-            })
-                .then(() => {
-                    this.fetchSensors();
-                    this.newSensorMac = '';
-                    this.newSensorName = '';
-                    this.newSensorIp = '';
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -108,7 +82,12 @@ new Vue({
         },
         updateSensor(sensor) {
             console.log('Update sensor called');
-            axios.put(`${this.apiUrl}/sensors/${sensor.mac_address}`, { name: sensor.name, ip_address: sensor.ip_address, capabilities: sensor.capabilities })
+            axios.put(`${this.apiUrl}/sensors/${sensor.mac_address}`, {
+                name: sensor.name,
+                ip_address: sensor.ip_address,
+                capabilities: sensor.capabilities,
+                states: sensor.states
+            })
                 .then(() => {
                     sensor.editing = false;
                     this.isEditing = false; // Bearbeitungsmodus deaktivieren
@@ -142,6 +121,6 @@ new Vue({
         setInterval(() => {
             this.fetchSystemStatus();
             this.fetchSensors();
-        }, 5000); // Aktualisiert alle 5 Sekunden
+        }, 1000); // Aktualisiert alle 5 Sekunden
     }
 });

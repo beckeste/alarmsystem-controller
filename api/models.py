@@ -20,5 +20,13 @@ class Sensor(Base):
     shutter_sensor = Column(Boolean, default=False)
     motion_sensor = Column(Boolean, default=False)
     siren = Column(Boolean, default=False)
+    
+    # Zustände der Sensoren
+    door_open = Column(Boolean, default=False)
+    shutter_open = Column(Boolean, default=False)
+    motion_detected = Column(Boolean, default=False)
+    siren_on = Column(Boolean, default=False)
+    buzzer_on = Column(Boolean, default=False)
+    armed = Column(Boolean, default=False)
 
 Base.metadata.create_all(engine)
