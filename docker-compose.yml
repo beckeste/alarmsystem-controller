@@ -4,6 +4,8 @@ services:
   api:
     build:
       context: ./api
+    volumes:
+      - sqlite-data:/app/data
     ports:
       - "8081:5000"
 
@@ -14,3 +16,6 @@ services:
       - "8080:80"
     depends_on:
       - api
+
+volumes:
+  sqlite-data:

@@ -3,18 +3,38 @@ import threading
 from flask_restful import Resource
 from sqlalchemy.orm import sessionmaker
 from models import Sensor, engine
+from shared import alarm_system_status, ALARM_LEVELS
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
-alarm_system_status = {'status': 'disarmed', 'alarm_level': 'none'}
+def update_alarm_status(level):
+    """
+    Update the alarm status based on the provided level
+    """
+    if level not in ALARM_LEVELS:
+        raise ValueError('Invalid alarm level')
 
-ALARM_LEVELS = {
-    'none': 0,
-    'low': 1,
-    'medium': 2,
-    'high': 3
-}
+    current_level = alarm_system_status['alarm_level']
+    if ALARM_LEVELS[level] > ALARM_LEVELS[current_level]:
+        alarm_system_status['status'] = 'alarming'
+        alarm_system_status['alarm_level'] = level
+
+    # Trigger sensors based on alarm level
+    trigger_sensors = False
+    endpoint = ''
+    if level == 'medium':
+        endpoint = '/startbuzzer'
+        trigger_sensors = True
+    elif level == 'high':
+        endpoint = '/startsirene'
+        trigger_sensors = True
+
+    if trigger_sensors:
+        sensors = session.query(Sensor).all()
+        for sensor in sensors:
+            threading.Thread(target=trigger_sensor, args=(sensor, endpoint)).start()
+
 
 def trigger_sensor(sensor, endpoint):
     try:
@@ -91,25 +111,9 @@ class AlarmResource(Resource):
         if alarm_system_status['status'] == 'disarmed':
             return {'message': 'Alarm system is disarmed'}, 400
         
-        if level not in ALARM_LEVELS:
-            return {'message': 'Invalid alarm level'}, 400
-        
-        current_level = alarm_system_status['alarm_level']
-        if ALARM_LEVELS[level] <= ALARM_LEVELS[current_level]:
-            return {'message': f'Cannot trigger {level} alarm when current alarm level is {current_level}'}, 400
-        
-        alarm_system_status['status'] = 'alarming'
-        alarm_system_status['alarm_level'] = level
-
-        # Trigger sensors based on alarm level
-        sensors = session.query(Sensor).all()
-        endpoint = ''
-        if level == 'medium':
-            endpoint = '/startbuzzer'
-        elif level == 'high':
-            endpoint = '/startsirene'
-
-        for sensor in sensors:
-            threading.Thread(target=trigger_sensor, args=(sensor, endpoint)).start()
+        try:
+            update_alarm_status(level)
+        except ValueError as e:
+            return {'message': str(e)}, 400
 
         return alarm_system_status, 200

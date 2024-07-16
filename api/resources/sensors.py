@@ -6,6 +6,8 @@ from flask_restful import Resource, reqparse
 from sqlalchemy.orm import sessionmaker
 from models import Sensor, engine
 from datetime import datetime
+from shared import alarm_system_status, ALARM_LEVELS
+from resources.alarmsystem import update_alarm_status
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -264,6 +266,10 @@ class SensorResource(Resource):
         args = parser.parse_args()
         sensor = session.query(Sensor).filter(Sensor.mac_address == mac_address).first()
         if sensor:
+            tmp_door_open = sensor.door_open
+            tmp_shutter_open = sensor.shutter_open
+            tmp_motion_detected = sensor.motion_detected
+
             sensor.last_updated = datetime.utcnow()
             sensor.ip_address = args['ip_address']
             if args['name'] is not None:
@@ -283,8 +289,23 @@ class SensorResource(Resource):
                 sensor.armed = args['states'].get('armed', sensor.armed)
             session.commit()
 
-            # Starte die Initialisierung des Sensors in einem separaten Thread
-            threading.Thread(target=trigger_sensor, args=(sensor, '/initsensor')).start()
+
+            #TODO Wenn der Sensor gemeldet hat, shutter_open, dann alarm bei allen Sensoren auslösen
+            alarmed = False
+            if alarm_system_status["status"] == "armed":
+              door_opened = sensor.door_open and not tmp_door_open
+              shutter_opened = sensor.shutter_open and not tmp_shutter_open
+              motion_detected = sensor.motion_detected and not tmp_motion_detected
+              if door_opened or shutter_opened:
+                update_alarm_status("medium")
+                alarmed = True
+              elif motion_detected:
+                update_alarm_status("low")
+                alarmed = True
+
+            if not alarmed:
+              threading.Thread(target=trigger_sensor, args=(sensor, '/initsensor')).start()
+            
 
             return {
                 'mac_address': sensor.mac_address,

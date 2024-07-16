@@ -13,6 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Kopiere den Rest des Anwendungscodes in das Arbeitsverzeichnis
 COPY . .
 
+# Erstelle das Verzeichnis für die SQLite-Datenbank und setze die Berechtigungen
+RUN mkdir -p /app/data && chmod -R 777 /app/data
+
 # Setze die Umgebungsvariable für Flask
 ENV FLASK_APP=app.py
 
