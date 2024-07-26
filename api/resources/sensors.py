@@ -290,9 +290,9 @@ class SensorResource(Resource):
             session.commit()
 
 
-            #TODO Wenn der Sensor gemeldet hat, shutter_open, dann alarm bei allen Sensoren auslösen
+            # Wenn der Sensor gemeldet hat, shutter_open, dann alarm bei allen Sensoren auslösen
             alarmed = False
-            if alarm_system_status["status"] == "armed":
+            if alarm_system_status["status"] == "armed" and sensor.armed:
               door_opened = sensor.door_open and not tmp_door_open
               shutter_opened = sensor.shutter_open and not tmp_shutter_open
               motion_detected = sensor.motion_detected and not tmp_motion_detected
@@ -305,7 +305,6 @@ class SensorResource(Resource):
 
             if not alarmed:
               threading.Thread(target=trigger_sensor, args=(sensor, '/initsensor')).start()
-            
 
             return {
                 'mac_address': sensor.mac_address,

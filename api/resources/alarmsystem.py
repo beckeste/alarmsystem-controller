@@ -1,5 +1,6 @@
 import requests
 import threading
+import time
 from flask_restful import Resource
 from sqlalchemy.orm import sessionmaker
 from models import Sensor, engine
@@ -7,6 +8,15 @@ from shared import alarm_system_status, ALARM_LEVELS
 
 Session = sessionmaker(bind=engine)
 session = Session()
+
+def trigger_sensor(sensor, endpoint):
+    time.sleep(2)
+    try:
+        response = requests.get(f'http://{sensor.ip_address}{endpoint}')
+        if response.status_code != 200:
+            print(f'Failed to trigger sensor at {sensor.ip_address} with endpoint {endpoint}')
+    except requests.exceptions.RequestException as e:
+        print(f'Exception occurred while triggering sensor at {sensor.ip_address} with endpoint {endpoint}: {str(e)}')
 
 def update_alarm_status(level):
     """
@@ -33,16 +43,8 @@ def update_alarm_status(level):
     if trigger_sensors:
         sensors = session.query(Sensor).all()
         for sensor in sensors:
-            threading.Thread(target=trigger_sensor, args=(sensor, endpoint)).start()
-
-
-def trigger_sensor(sensor, endpoint):
-    try:
-        response = requests.get(f'http://{sensor.ip_address}{endpoint}')
-        if response.status_code != 200:
-            print(f'Failed to trigger sensor at {sensor.ip_address} with endpoint {endpoint}')
-    except requests.exceptions.RequestException as e:
-        print(f'Exception occurred while triggering sensor at {sensor.ip_address} with endpoint {endpoint}: {str(e)}')
+            if sensor.armed:
+                threading.Thread(target=trigger_sensor, args=(sensor, endpoint)).start()
 
 class AlarmSystemResource(Resource):
     def get(self):
@@ -67,9 +69,12 @@ class ArmResource(Resource):
         alarm_system_status['status'] = 'armed'
         alarm_system_status['alarm_level'] = 'none'
 
+        print('Trigger Sensors')
+        
         # Trigger all sensors with /arm
         sensors = session.query(Sensor).all()
         for sensor in sensors:
+            print('Trigger Sensor')
             threading.Thread(target=trigger_sensor, args=(sensor, '/arm')).start()
 
         return alarm_system_status, 200
