@@ -2,7 +2,9 @@
 <html>
 <head>
     <title>Alarm System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bulma CSS von CDN einbinden -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" integrity="sha512-q3eWabyZPc1XTCmF+8/LuE1ozpg5xxn7iO89yfSOd5/oKvyqLngoNGsx8jq92Y8eXJ/IRxQbEC+FGSYxtk2oiw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -15,44 +17,110 @@
 <body>
     <section class="section">
         <div class="container" id="app">
-            <h1 class="title">Alarm System</h1>
-            <div class="buttons">
-                <button class="button is-primary" @click="armSystem">Arm System</button>
-                <button class="button is-warning" @click="disarmSystem">Disarm System</button>
-                <button class="button is-danger" @click="triggerAlarm('low')">Trigger Low Alarm</button>
-                <button class="button is-danger" @click="triggerAlarm('medium')">Trigger Medium Alarm</button>
-                <button class="button is-danger" @click="triggerAlarm('high')">Trigger High Alarm</button>
+            <article v-if="systemStatus === 'alarming'" class="message is-danger">
+                <div class="message-body">
+                  <strong>ALARM!</strong>
+                  <br>Alarm Level: {{ alarmLevel }}
+                </div>
+              </article>
+              <article v-if="systemStatus !== 'disarmed'" class="message is-warning">
+                  <div class="message-body">
+                    <strong>Alarmanlage scharfgeschaltet!</strong>
+                  </div>
+                </article>
+            <h1 class="title is-1">Alarmanlage</h1>
+            <div class="box">
+                <button v-if="systemStatus === 'disarmed'" class="button is-medium is-fullwidth is-primary" @click="armSystem">Scharfschalten</button>
+                <button v-if="systemStatus !== 'disarmed'" class="button is-medium is-fullwidth is-warning" @click="disarmSystem">Deaktivieren</button>
             </div>
-            <p class="subtitle">System Status: {{ systemStatus }}</p>
-            <p class="subtitle">Alarm Level: {{ alarmLevel }}</p>
+            <div v-if="systemStatus !== 'disarmed'" class="box">
+              <button class="button is-medium is-fullwidth is-danger" @click="triggerAlarm('low')">Trigger Low Alarm</button>
+              <button class="mt-4 button is-medium is-fullwidth is-danger" @click="triggerAlarm('medium')">Trigger Medium Alarm</button>
+              <button class="mt-4 button is-medium is-fullwidth is-danger" @click="triggerAlarm('high')">Trigger High Alarm</button>
+            </div>
 
-            <h2 class="title is-4">Sensors</h2>
-            <ul>
-                <li v-for="sensor in sensors" :key="sensor.mac_address">
-                    <span class="tag is-info">MAC: {{ sensor.mac_address }}</span> - 
-                    <span class="tag is-light">Last Updated: {{ sensor.last_updated }}</span> - 
-                    <span class="tag is-dark">IP: {{ sensor.ip_address }}</span>
-                    <span class="tag is-primary">Name: {{ sensor.name }}</span>
-                    <button class="button is-small is-danger is-outlined" @click="deleteSensor(sensor.mac_address)">Delete</button>
-                    <button class="button is-small is-info is-outlined" @click="editSensor(sensor)" v-if="!sensor.editing">Edit</button>
+            <div class="mt-6 box">
+                <h2 class="title is-2">Sensoren</h2>
+                <div class="box" v-for="sensor in sensors" :key="sensor.mac_address">
+                    <h4 class="title is-4">{{ sensor.name }}</h4>
+
                     <div v-if="!sensor.editing">
-                        <p>Buzzer: {{ sensor.capabilities.buzzer ? 'Yes' : 'No' }}</p>
-                        <p>Door Sensor: {{ sensor.capabilities.door_sensor ? 'Yes' : 'No' }}</p>
-                        <p>Shutter Sensor: {{ sensor.capabilities.shutter_sensor ? 'Yes' : 'No' }}</p>
-                        <p>Motion Sensor: {{ sensor.capabilities.motion_sensor ? 'Yes' : 'No' }}</p>
-                        <p>Siren: {{ sensor.capabilities.siren ? 'Yes' : 'No' }}</p>
-                        <p>Armed: {{ sensor.states.armed ? 'Yes' : 'No' }}</p>
-                        <p>Door Open: {{ sensor.states.door_open ? 'Yes' : 'No' }}</p>
-                        <p>Shutter Open: {{ sensor.states.shutter_open ? 'Yes' : 'No' }}</p>
-                        <p>Motion Detected: {{ sensor.states.motion_detected ? 'Yes' : 'No' }}</p>
-                        <p>Siren On: {{ sensor.states.siren_on ? 'Yes' : 'No' }}</p>
-                        <p>Buzzer On: {{ sensor.states.buzzer_on ? 'Yes' : 'No' }}</p>
+
+                        <div class="columns">
+
+                            <div class="column">
+
+
+                                <div class="content">
+
+                                    <span v-if="sensor.states.armed" class="tag is-warning">Scharfgeschaltet</span>
+                                    <span v-if="!sensor.states.armed" class="tag is-info">Deaktiviert</span>
+
+                                    <div v-if="sensor.capabilities.door_sensor">
+                                        <span v-if="sensor.states.door_open" class="tag is-danger">Tür offen</span>
+                                        <span v-if="!sensor.states.door_open" class="tag is-success">Tür geschlossen</span>
+                                    </div>
+
+                                    <div v-if="sensor.capabilities.shutter_sensor">
+                                        <span v-if="sensor.states.shutter_open" class="tag is-danger">Rollade offen</span>
+                                        <span v-if="!sensor.states.shutter_open" class="tag is-success">Rollade geschlossen</span>
+                                    </div>
+
+                                    <div v-if="sensor.capabilities.motion_sensor">
+                                        <span v-if="sensor.states.motion_detected" class="tag is-danger">Bewegung erkannt</span>
+                                        <span v-if="!sensor.states.motion_detected" class="tag is-success">Keine Bewegung erkannt</span>
+                                    </div>
+
+                                    <div v-if="sensor.capabilities.siren">
+                                        <span v-if="sensor.states.siren_on" class="tag is-danger">Sirene an</span>
+                                        <span v-if="!sensor.states.siren_on" class="tag is-success">Sirene aus</span>
+                                    </div>
+
+                                    <div v-if="sensor.capabilities.buzzer">
+                                        <span v-if="sensor.states.buzzer_on" class="tag is-danger">Buzzer an</span>
+                                        <span v-if="!sensor.states.buzzer_on" class="tag is-success">Buzzer aus</span>
+                                    </div>
+
+                                </div>
+
+                                
+                            </div>
+
+                            <div class="column">
+                                <div class="content is-small">
+                                    <p>
+                                        MAC: {{ sensor.mac_address }}
+                                    </p>
+                                    <p>
+                                        IP: {{ sensor.ip_address }}
+                                    </p>
+                                    <p>
+                                        Letztes Update: {{ sensor.last_updated }}
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
                     </div>
                     <div v-else>
-                        <label class="label">Name</label>
-                        <input class="input" v-model="sensor.name">
-                        <label class="label">IP Address</label>
-                        <input class="input" v-model="sensor.ip_address">
+
+                        <div class="field">
+                            <label class="label">Name</label>
+                            <div class="control">
+                                <input class="input" v-model="sensor.name">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">IP Addresse</label>
+                            <div class="control">
+                                <input class="input" v-model="sensor.ip_address">
+                            </div>
+                        </div>
+
                         <label>
                             <input type="checkbox" v-model="sensor.capabilities.buzzer"> Buzzer
                         </label>
@@ -86,11 +154,30 @@
                         <label>
                             <input type="checkbox" v-model="sensor.states.buzzer_on"> Buzzer On
                         </label>
-                        <button class="button is-small is-success" @click="updateSensor(sensor)">Save</button>
-                        <button class="button is-small" @click="cancelEdit(sensor)">Cancel</button>
+
+
+                        <div class="field is-grouped is-grouped-right">
+                            <p class="control">
+                                <button class="button is-small is-success" @click="updateSensor(sensor)">Speichern</button>
+                            </p>
+                            <p class="control">
+                                <button class="button is-small" @click="cancelEdit(sensor)">Abbrechen</button>
+                            </p>
+                        </div>
                     </div>
-                </li>
-            </ul>
+
+                    <div v-if="!sensor.editing" class="mt-4 field is-grouped is-grouped-right">
+                        <p class="control">
+                            <button class="button is-small is-danger is-outlined" @click="deleteSensor(sensor.mac_address)">Löschen</button>
+                        </p>
+                        <p class="control">
+                            <button class="button is-small is-info is-outlined" @click="editSensor(sensor)">Bearbeiten</button>
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
         </div>
     </section>
 
